@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: visio-mongo
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo-data:/data/db
+
+  server:
+    build: ./server
+    container_name: visio-server
+    ports:
+      - '5000:5000'
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/specs-glasses
+      - JWT_SECRET=change_this_secret
+      - JWT_EXPIRE=7d
+      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
+      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
+      - CLIENT_URL=http://localhost:5173
+    depends_on:
+      - mongo
+    volumes:
+      - ./server/uploads:/app/uploads
+
+  client:
+    build: ./client
+    container_name: visio-client
+    ports:
+      - '5173:80'
+    depends_on:
+      - server
+
+volumes:
+  mongo-data:
