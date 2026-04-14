@@ -1,15 +1,10 @@
 const router = require('express').Router();
 const multer = require('multer');
-const path = require('path');
 const { protect, adminOnly } = require('../middleware/auth');
+const { uploadToCloudinary } = require('../utils/cloudinary');
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, path.join(__dirname, '../../uploads')),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`);
-  },
-});
+// Store files in memory (buffer), not on disk
+const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
   if (file.mimetype.startsWith('image/')) cb(null, true);
@@ -18,9 +13,20 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({ storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } });
 
-router.post('/', protect, adminOnly, upload.array('images', 5), (req, res) => {
-  const urls = req.files.map((f) => `/uploads/${f.filename}`);
-  res.json({ urls });
+router.post('/', protect, adminOnly, upload.array('images', 5), async (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0)
+      return res.status(400).json({ message: 'No files uploaded' });
+
+    const urls = await Promise.all(
+      req.files.map((file) => uploadToCloudinary(file.buffer))
+    );
+
+    res.json({ urls });
+  } catch (err) {
+    console.error('Cloudinary upload error:', err);
+    res.status(500).json({ message: 'Image upload failed' });
+  }
 });
 
 module.exports = router;

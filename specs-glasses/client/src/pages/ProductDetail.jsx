@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import api from '../api/axios';
 import useCartStore from '../store/cartStore';
 import useAuthStore from '../store/authStore';
+import useWishlistStore from '../store/wishlistStore';
 import Spinner from '../components/ui/Spinner';
 import toast from 'react-hot-toast';
 
@@ -16,6 +17,8 @@ export default function ProductDetail() {
   const [submitting, setSubmitting] = useState(false);
   const addItem = useCartStore((s) => s.addItem);
   const { user } = useAuthStore();
+  const toggle = useWishlistStore((s) => s.toggle);
+  const isWishlisted = useWishlistStore((s) => s.ids.includes(id));
 
   useEffect(() => {
     api.get(`/products/${id}`)
@@ -140,6 +143,24 @@ export default function ProductDetail() {
               <button onClick={handleAddToCart}
                 className="flex-1 bg-gray-900 text-white py-3 rounded-full font-medium hover:bg-gray-700 transition-colors">
                 Add to Cart
+              </button>
+              {/* Wishlist */}
+              <button
+                onClick={() => toggle(product._id, user)}
+                title={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+                className={`p-3 rounded-full border transition-all duration-200 hover:scale-110 ${
+                  isWishlisted ? 'bg-red-50 border-red-200' : 'border-gray-200 hover:border-red-300'
+                }`}
+              >
+                <svg
+                  className={`w-5 h-5 transition-colors duration-200 ${isWishlisted ? 'text-red-500' : 'text-gray-400'}`}
+                  fill={isWishlisted ? 'currentColor' : 'none'}
+                  stroke="currentColor"
+                  strokeWidth={isWishlisted ? 0 : 1.5}
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
               </button>
             </div>
           ) : (

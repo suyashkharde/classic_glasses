@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { useEffect } from 'react';
 import ScrollToTop from './components/ScrollToTop';
 import Layout from './components/layout/Layout';
 import Home from './pages/Home';
@@ -16,8 +17,19 @@ import Dashboard from './pages/admin/Dashboard';
 import AdminProducts from './pages/admin/AdminProducts';
 import ProductForm from './pages/admin/ProductForm';
 import AdminOrders from './pages/admin/AdminOrders';
+import useAuthStore from './store/authStore';
+import useWishlistStore from './store/wishlistStore';
 
 export default function App() {
+  const { user } = useAuthStore();
+  const fetchWishlist = useWishlistStore((s) => s.fetchWishlist);
+  const clearWishlist = useWishlistStore((s) => s.clear);
+
+  useEffect(() => {
+    if (user) fetchWishlist();
+    else clearWishlist();
+  }, [user]);
+
   return (
     <BrowserRouter>
       <ScrollToTop />

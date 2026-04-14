@@ -1,14 +1,14 @@
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
 import useCartStore from '../../store/cartStore';
 import useAuthStore from '../../store/authStore';
-import api from '../../api/axios';
+import useWishlistStore from '../../store/wishlistStore';
 import toast from 'react-hot-toast';
 
 export default function ProductCard({ product }) {
   const addItem = useCartStore((s) => s.addItem);
   const { user } = useAuthStore();
-  const [wishlisted, setWishlisted] = useState(false);
+  const toggle = useWishlistStore((s) => s.toggle);
+  const isWishlisted = useWishlistStore((s) => s.ids.includes(product._id));
 
   const handleAddToCart = (e) => {
     e.preventDefault();
@@ -16,16 +16,9 @@ export default function ProductCard({ product }) {
     toast.success('Added to cart');
   };
 
-  const handleWishlist = async (e) => {
+  const handleWishlist = (e) => {
     e.preventDefault();
-    if (!user) return toast.error('Please login first');
-    try {
-      await api.post(`/auth/wishlist/${product._id}`);
-      setWishlisted(!wishlisted);
-      toast.success(wishlisted ? 'Removed from wishlist' : 'Added to wishlist');
-    } catch {
-      toast.error('Failed to update wishlist');
-    }
+    toggle(product._id, user);
   };
 
   const discount = product.originalPrice
@@ -38,7 +31,7 @@ export default function ProductCard({ product }) {
         {/* Image */}
         <div className="relative aspect-square bg-gray-50 overflow-hidden">
           <img
-            src={product.images?.[0] ? product.images[0] : 'https://placehold.co/400x400/f5f5f5/999?text=Glasses'}
+            src={product.images?.[0] || 'https://placehold.co/400x400/f5f5f5/999?text=Glasses'}
             alt={product.name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
@@ -47,12 +40,29 @@ export default function ProductCard({ product }) {
               -{discount}%
             </span>
           )}
+
+          {/* Wishlist button */}
           <button
             onClick={handleWishlist}
-            className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-sm hover:scale-110 transition-transform"
+            title={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+            className={`absolute top-3 right-3 p-2 rounded-full shadow-sm transition-all duration-200 hover:scale-110 ${
+              isWishlisted ? 'bg-red-50' : 'bg-white'
+            }`}
           >
-            <svg className={`w-4 h-4 ${wishlisted ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} fill={wishlisted ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            <svg
+              className={`w-4 h-4 transition-colors duration-200 ${
+                isWishlisted ? 'text-red-500' : 'text-gray-300 hover:text-red-400'
+              }`}
+              fill={isWishlisted ? 'currentColor' : 'none'}
+              stroke="currentColor"
+              strokeWidth={isWishlisted ? 0 : 1.5}
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+              />
             </svg>
           </button>
         </div>
